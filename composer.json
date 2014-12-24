@@ -1,0 +1,35 @@
+{
+    "name": "star/spec-writer",
+    "description": "Specification writer tool for writing gherkin scenarios.",
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yannick Voyer",
+            "email": "yan.voyer@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Star\\SpecWriter\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Star\\SpecWriter\\": "tests"
+        }
+    },
+    "require": {
+        "php": ">=5.3.3",
+        "star/collection": "~1.0",
+        "behat/gherkin": "~2.2",
+        "symfony/console": "~2.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0",
+        "behat/behat": "2.4.*@stable"
+    },
+    "config": {
+        "bin-dir": "bin/"
+    }
+}

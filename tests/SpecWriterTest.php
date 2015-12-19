@@ -7,12 +7,6 @@
 
 namespace Star\SpecWriter;
 
-use Star\SpecWriter\Dumper\Dumper;
-use Star\SpecWriter\Dumper\FeatureDumper;
-use Star\SpecWriter\Keyword\Feature;
-use Star\SpecWriter\Keyword\Goal;
-use Star\SpecWriter\Keyword\Scenario;
-
 /**
  * Class SpecWriterTest
  *
@@ -22,163 +16,90 @@ use Star\SpecWriter\Keyword\Scenario;
  */
 final class SpecWriterTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @var SpecWriter
-     */
-    private $writer;
-
-    /**
-     * @var Dumper
-     */
-    private $dumper;
-
-    public function setUp()
+    public function test_it_should_build_a_feature_header()
     {
-        $this->writer = new SpecWriter();
-        $this->dumper = new FeatureDumper();
-    }
+        $feature = SpecWriter::feature('Write a feature')
+            ->asUser('Domain expert')
+            ->inOrderTo('To read my specs')
+            ->iNeedTo('Have readable specs');
 
-    public function test_should_write_feature()
-    {
-        $this->writer->startFeature('My first feature');
-        $feature = $this->assertFeatureIsReturned();
-        $this->assertSame('My first feature', $feature->title());
-    }
+        $this->assertInstanceOf(ScenarioBuilder::class, $feature);
 
-    public function test_could_have_a_goal()
-    {
-        $this->writer->inOrderTo('Write a goal', 'Spec writer', 'Add a long description');
+        $expected = <<<EXPECTS
+Feature: Write a feature
+  As a Domain expert
+  In order To read my specs
+  I need to Have readable specs
 
-        $feature = $this->assertFeatureIsReturned();
-        $goal = $feature->goal();
-        $this->assertInstanceOf(Goal::CLASS_NAME, $goal);
-        $this->assertSame('Write a goal', $goal->inOrder());
-        $this->assertSame('Spec writer', $goal->asUser());
-        $this->assertSame('Add a long description', $goal->description());
-    }
 
-    public function test_could_define_scenarios()
-    {
-        $this->writer->startScenario('Write a valid scenario');
-        $this->writer->addGiven('The first given');
-        $this->writer->addGiven('The second given');
-        $this->writer->addWhen('The first when');
-        $this->writer->addWhen('The second when');
-        $this->writer->addThen('The first then');
-        $this->writer->addThen('The second then');
-        $scenario = $this->writer->endScenario();
-
-        $this->assertInstanceOf(Scenario::CLASS_NAME, $scenario);
-
-        $this->assertSame('Write a valid scenario', $scenario->title());
-        $this->assertCount(2, $scenario->givens());
-        $this->assertSame('The first given', $scenario->givens()[0]->statement());
-        $this->assertSame('The second given', $scenario->givens()[1]->statement());
-
-        $this->assertCount(2, $scenario->whens());
-        $this->assertSame('The first when', $scenario->whens()[0]->statement());
-        $this->assertSame('The second when', $scenario->whens()[1]->statement());
-
-        $this->assertCount(2, $scenario->thens());
-        $this->assertSame('The first then', $scenario->thens()[0]->statement());
-        $this->assertSame('The second then', $scenario->thens()[1]->statement());
-    }
-
-    /**
-     * @expectedException        \RuntimeException
-     * @expectedExceptionMessage The current scenario is not initialised.
-     */
-    public function test_end_scenario_should_throw_exception_when_current_scenario_not_defined()
-    {
-        $this->writer->endScenario();
-    }
-
-    /**
-     * @expectedException        \RuntimeException
-     * @expectedExceptionMessage The current scenario is not initialised.
-     */
-    public function test_add_given_should_throw_exception_when_current_scenario_not_defined()
-    {
-        $this->writer->addGiven('');
-    }
-
-    /**
-     * @expectedException        \RuntimeException
-     * @expectedExceptionMessage The current scenario is not initialised.
-     */
-    public function test_add_when_should_throw_exception_when_current_scenario_not_defined()
-    {
-        $this->writer->addWhen('');
-    }
-
-    /**
-     * @expectedException        \RuntimeException
-     * @expectedExceptionMessage The current scenario is not initialised.
-     */
-    public function test_add_then_should_throw_exception_when_current_scenario_not_defined()
-    {
-        $this->writer->addThen('');
-    }
-
-    /**
-     * @return Feature
-     */
-    private function assertFeatureIsReturned()
-    {
-        $feature = $this->writer->endFeature();
-        $this->assertInstanceOf(Feature::CLASS_NAME, $feature);
+EXPECTS;
+        $this->assertSame($expected, (string) $feature);
 
         return $feature;
     }
 
-    public function test_should_dump_the_feature()
+    /**
+     * @param ScenarioBuilder $builder
+     *
+     * @depends test_it_should_build_a_feature_header
+     */
+    public function test_it_should_build_a_scenario(ScenarioBuilder $builder)
     {
-        $this->writer->startFeature('Dump feature');
-        $this->writer->inOrderTo('Read my spec', 'Domain expert', 'Have readable specs');
+        $feature = $builder->scenario('Scenario #1')
+            ->Given('I have a statement')
+            ->Given('I have :count :string statement', 2, 'given')
+            ->When('I do something')
+            ->When('I :count things with :string', 2, 'value')
+            ->Then('I should have a then statement')
+            ->Then('I should have :count :string statement', 2, 'and')
+        ->endScenario();
 
-        $this->writer->startScenario('Scenario 1');
-        $this->writer->addGiven('I have my first given');
-        $this->writer->addGiven('I have my second given');
-        $this->writer->addWhen('I have my first when');
-        $this->writer->addWhen('I have my second when');
-        $this->writer->addThen('I have my first then');
-        $this->writer->addThen('I have my second then');
-        $this->writer->endScenario();
+        $expected = <<<STRING
+  Scenario: Scenario #1
+    Given I have a statement
+    And I have 2 'given' statement
+    When I do something
+    And I 2 things with 'value'
+    Then I should have a then statement
+    And I should have 2 'and' statement
 
-        $this->writer->startScenario('Scenario 2');
-        $this->writer->addGiven('I have my third given');
-        $this->writer->addGiven('I have my fourth given');
-        $this->writer->addWhen('I have my third when');
-        $this->writer->addWhen('I have my fourth when');
-        $this->writer->addThen('I have my third then');
-        $this->writer->addThen('I have my fourth then');
-        $this->writer->endScenario();
+STRING;
+        $this->assertInstanceOf(ScenarioBuilder::class, $feature);
+        $this->assertContains($expected, (string) $feature);
+    }
 
-        $feature = $this->writer->endFeature();
+    public function test_it_should_write_file_with_all_feature()
+    {
+        $feature = SpecWriter::feature('Feature name')
+            ->asUser('Developer')
+            ->inOrderTo('Do stuff')
+            ->iNeedTo('Use feature')
 
-        $expected = <<<EXPECTED
-Feature: Dump feature
-  In order to Read my spec
-  As a Domain Expert
-  I should Have readable specs
+        ->scenario('Do not have money')
+            ->Given('I have :amount', '5$')
+            ->Given('Product with name :name costs :amount', 'name', '10$')
+            ->When('I buy product :name', 'name')
+            ->When('I give :amount to pay', '5$')
+            ->Then('I should have :amount', '0$')
+            ->Then('I should have 1 product with name :name', 'name')
+        ->endScenario()
 
-  Scenario: Scenario 1
-    Given I have my first given
-    And I have my second given
-    When I have my first when
-    And I have my second when
-    Then I have my first then
-    And I have my second then
+        ->scenario('Pay with enough money')
+            ->Given('I have :amount', '5$')
+            ->Given('Product with name :name costs :amount', 'name', '10$')
+            ->When('I buy product :name', 'name')
+            ->When('I give :amount to pay', '5$')
+            ->Then('I should have :amount', '0$')
+            ->Then('I should have 1 product with name :name', 'name')
+        ->endScenario();
 
-  Scenario: Scenario 2
-    Given I have my third given
-    And I have my fourth given
-    When I have my third when
-    And I have my fourth when
-    Then I have my third then
-    And I have my fourth then
+        $file = __DIR__ . '/actual.feature';
+        $feature->write($file);
+        $this->assertFileEquals($file, __DIR__ . '/expected.feature');
+    }
 
-EXPECTED;
-        $this->assertSame($expected, $this->dumper->dump($feature));
+    public function tearDown()
+    {
+        @unlink(__DIR__ . '/actual.feature');
     }
 }

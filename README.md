@@ -1,11 +1,12 @@
 spec-writer
 ===========
+[![Build Status](https://travis-ci.org/yvoyer/spec-writer.svg)](https://travis-ci.org/yvoyer/spec-writer)
 
 Gherkin style specification writer
 
 Usage in php
 
-
+```php
     $feature = SpecWriter::feature('Feature name')
         ->asUser('Developer')
         ->inOrderTo('Do stuff')
@@ -32,10 +33,12 @@ Usage in php
     // Write the feature to the feature file so that it can be executed by the test suite.
     $file = __DIR__ . '/actual.feature';
     $feature->write($file);
+```
 
 The use case would generate the following file content:
 
 
+```php
     // Content of "actual.feature" file
     Feature: Feature name
       As a Developer
@@ -57,4 +60,4 @@ The use case would generate the following file content:
         And I give '5$' to pay
         Then I should have '0$'
         And I should have 1 product with name 'name'
-
+```
